@@ -28,10 +28,16 @@ iface eth1 inet manual
     up ip link set dev eth1 up
     down ip link set dev eth1 down
 
-# --- PRE-CONFIGURED VLAN 1 (Management) ---
+# --- PRE-CONFIGURED VLAN 1 ---
 auto eth1.1
 iface eth1.1 inet static
     address 172.16.255.1
+    netmask 255.255.255.0
+    vlan-raw-device eth1
+
+auto eth1.99
+iface eth1.99 inet static
+    address 172.16.99.1
     netmask 255.255.255.0
     vlan-raw-device eth1
 
@@ -67,4 +73,11 @@ interface=eth1.1
 dhcp-range=172.16.255.100,172.16.255.200,255.255.255.0,24h
 dhcp-option=tag:eth1.1,option:router,172.16.255.1
 dhcp-option=tag:eth1.1,option:dns-server,8.8.8.8
+EOF
+
+cat > /etc/dnsmasq.d/vlan99.conf <<EOF
+interface=eth1.99
+dhcp-range=192.168.99.100,192.168.99.200,255.255.255.0,24h
+dhcp-option=tag:eth1.99,option:router,192.168.99.1
+dhcp-option=tag:eth1.99,option:dns-server,8.8.8.8
 EOF
