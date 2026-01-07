@@ -17,13 +17,11 @@ PROXYOPTS="none"
 APKREPOSOPTS="-1"
 USEROPTS="none"
 
-# --- KEY MAGIC: Inject Public Key trực tiếp ---
-# openssh phải được cài đặt thì mới nhận key
-SSHDOPTS="-o PermitRootLogin=prohibit-password"
+SSHDOPTS="openssh"
 ROOTSSHKEY="${ssh_public_key}"
 
 # Disk & NTP
 NTPOPTS="-c chrony"
-DISKOPTS="-m sys /dev/vda"
+DISKOPTS="-m sys /dev/sda"
 LBUOPTS="none"
 APKCACHEOPTS="/var/cache/apk"
