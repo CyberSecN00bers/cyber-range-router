@@ -64,7 +64,7 @@ server=1.1.1.1
 bind-interfaces
 
 # Load các file config DHCP của từng VLAN
-conf-dir=/etc/dnsmasq.d,.conf
+conf-dir=/etc/dnsmasq.d,*.conf
 EOF
 
 cat > /etc/dnsmasq.d/vlan1.conf <<EOF
