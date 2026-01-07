@@ -28,6 +28,43 @@ iface eth1 inet manual
     up ip link set dev eth1 up
     down ip link set dev eth1 down
 
+# --- PRE-CONFIGURED VLAN 1 (Management) ---
+auto eth1.1
+iface eth1.1 inet static
+    address 172.16.255.1
+    netmask 255.255.255.0
+    vlan-raw-device eth1
+
 # Load các cấu hình VLAN từ thư mục con
 include /etc/network/interfaces.d/*.conf
+EOF
+
+apk add dnsmasq
+rc-update add dnsmasq default
+
+mkdir -p /etc/dnsmasq.d
+mv /etc/dnsmasq.conf /etc/dnsmasq.conf.bak 2>/dev/null
+
+cat > /etc/dnsmasq.conf <<EOF
+# Base settings
+domain-needed
+bogus-priv
+no-resolv
+# DNS Upstream (Google/Cloudflare)
+server=8.8.8.8
+server=1.1.1.1
+
+# Quan trọng: Chỉ bind vào các interface được khai báo cụ thể
+bind-interfaces
+
+# Load các file config DHCP của từng VLAN
+conf-dir=/etc/dnsmasq.d,.conf
+EOF
+
+cat > /etc/dnsmasq.d/vlan1.conf <<EOF
+# Config cho eth1.1
+interface=eth1.1
+dhcp-range=172.16.255.100,172.16.255.200,255.255.255.0,24h
+dhcp-option=tag:eth1.1,option:router,172.16.255.1
+dhcp-option=tag:eth1.1,option:dns-server,8.8.8.8
 EOF

@@ -1,67 +1,98 @@
 #!/bin/sh
 
 # Tên script: qm-vlan
-# Chức năng: Quản lý VLAN trên eth1 nhanh chóng
-# Usage: qm-vlan add <vlan-id> <ip/cidr>
+# Chức năng: Quản lý VLAN + Auto DHCP (Dnsmasq)
+# Usage: qm-vlan add <vlan-id> <gateway-ip/cidr>
 #        qm-vlan del <vlan-id>
 
 CMD=$1
 VID=$2
-ADDR=$3
+INPUT_IP=$3  # Ví dụ: 192.168.10.1/24
 
 usage() {
     echo "Usage:"
-    echo "  qm-vlan add <vlan_id> <ip_cidr>  (Ex: qm-vlan add 10 192.168.10.1/24)"
-    echo "  qm-vlan del <vlan_id>            (Ex: qm-vlan del 10)"
+    echo "  qm-vlan add <vlan_id> <gateway_ip/cidr>"
+    echo "    Ex: qm-vlan add 10 192.168.10.1/24"
+    echo "    (Tự động bật DHCP range .100 -> .200)"
+    echo "  qm-vlan del <vlan_id>"
     exit 1
 }
 
+# Validate input cơ bản
 if [ -z "$CMD" ] || [ -z "$VID" ]; then
     usage
 fi
 
-CONF_FILE="/etc/network/interfaces.d/vlan${VID}.conf"
 IFACE="eth1.${VID}"
+NET_CONF="/etc/network/interfaces.d/vlan${VID}.conf"
+DNS_CONF="/etc/dnsmasq.d/vlan${VID}.conf"
 
 case "$CMD" in
     add)
-        if [ -z "$ADDR" ]; then
-            echo "Error: Missing IP address for add command."
+        if [ -z "$INPUT_IP" ]; then
+            echo "Error: Thiếu IP Gateway (vd: 192.168.10.1/24)"
             usage
         fi
+
+        # Tách IP và Subnet (Giả sử nhập đúng format CIDR)
+        # Lấy phần IP bỏ CIDR: 192.168.10.1
+        IP_ONLY=$(echo $INPUT_IP | cut -d'/' -f1)
+        # Lấy 3 octet đầu: 192.168.10
+        SUBNET_PREFIX=$(echo $IP_ONLY | cut -d'.' -f1-3)
         
-        echo "[+] Creating VLAN $VID with IP $ADDR..."
-        
-        # Tạo file config riêng cho VLAN này
-        cat > "$CONF_FILE" <<EOF
+        echo "[+] Đang tạo VLAN $VID ($IFACE) với IP $INPUT_IP..."
+
+        # 1. Tạo file config Network
+        cat > "$NET_CONF" <<EOF
 auto $IFACE
 iface $IFACE inet static
-    address $ADDR
+    address $INPUT_IP
     vlan-raw-device eth1
 EOF
-        
-        # Kích hoạt interface ngay lập tức
+
+        # 2. Tạo file config DHCP (Dnsmasq)
+        # Tự động set range từ .100 đến .200
+        echo "[+] Config DHCP: Range $SUBNET_PREFIX.100 -> .200"
+        cat > "$DNS_CONF" <<EOF
+# Auto-generated for VLAN $VID
+interface=$IFACE
+dhcp-range=$SUBNET_PREFIX.100,$SUBNET_PREFIX.200,255.255.255.0,24h
+dhcp-option=tag:$IFACE,option:router,$IP_ONLY
+dhcp-option=tag:$IFACE,option:dns-server,8.8.8.8
+EOF
+
+        # 3. Apply
+        echo "[+] Kích hoạt interface..."
         ifup "$IFACE"
         
-        # (Tuỳ chọn) Nếu bạn muốn DHCP server cho VLAN này thì thêm logic start dnsmasq ở đây
-        echo "[OK] VLAN $VID ($IFACE) is UP."
+        echo "[+] Restarting DNS/DHCP service..."
+        rc-service dnsmasq restart
+
+        echo "[OK] VLAN $VID đã sẵn sàng!"
         ;;
-        
+
     del)
-        echo "[-] Removing VLAN $VID..."
+        echo "[-] Đang xoá VLAN $VID..."
         
-        # Hạ interface xuống
+        # Hạ interface
         ifdown "$IFACE" 2>/dev/null
         
-        # Xoá file config
-        if [ -f "$CONF_FILE" ]; then
-            rm "$CONF_FILE"
-            echo "[OK] Config removed."
-        else
-            echo "[!] Config file not found, but interface down command sent."
+        # Xoá config Network
+        if [ -f "$NET_CONF" ]; then
+            rm "$NET_CONF"
+            echo " - Deleted network config."
         fi
-        ;;
+
+        # Xoá config DHCP
+        if [ -f "$DNS_CONF" ]; then
+            rm "$DNS_CONF"
+            echo " - Deleted DHCP config."
+        fi
         
+        # Restart lại service để xoá cache
+        rc-service dnsmasq restart
+        echo "[OK] Đã xoá xong."
+        ;;
     *)
         usage
         ;;
