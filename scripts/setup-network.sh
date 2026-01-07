@@ -7,7 +7,18 @@ sysctl -w net.ipv4.ip_forward=1
 # Cấu hình IPTABLES NAT (Overload ra eth0)
 apk add iptables
 rc-update add iptables default
+
+# NAT Overload for internet
 iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+
+# NAT port
+GUAC_IP="172.16.99.10"
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j DNAT --to-destination $GUAC_IP:80
+iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 443 -j DNAT --to-destination $GUAC_IP:443
+
+# Cho phép gói tin mới (NEW) đi đến Guacamole qua port 80/443
+iptables -A FORWARD -p tcp -d $GUAC_IP --dport 80 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
+iptables -A FORWARD -p tcp -d $GUAC_IP --dport 443 -m state --state NEW,ESTABLISHED,RELATED -j ACCEPT
 
 # Save rule
 /etc/init.d/iptables save
