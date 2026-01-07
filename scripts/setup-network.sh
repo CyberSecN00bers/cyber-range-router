@@ -77,7 +77,7 @@ EOF
 
 cat > /etc/dnsmasq.d/vlan99.conf <<EOF
 interface=eth1.99
-dhcp-range=192.168.99.100,192.168.99.200,255.255.255.0,24h
-dhcp-option=tag:eth1.99,option:router,192.168.99.1
+dhcp-range=172.16.99.100,172.16.99.200,255.255.255.0,24h
+dhcp-option=tag:eth1.99,option:router,172.16.99.1
 dhcp-option=tag:eth1.99,option:dns-server,8.8.8.8
 EOF
