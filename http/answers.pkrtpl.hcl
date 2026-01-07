@@ -14,7 +14,8 @@ iface eth1 inet manual
 DNSOPTS="-d 8.8.8.8"
 TIMEZONEOPTS="-z Asia/Ho_Chi_Minh"
 PROXYOPTS="none"
-APKREPOSOPTS="-1"
+
+APKREPOSOPTS="-1 -c"
 USEROPTS="none"
 
 SSHDOPTS="openssh"
