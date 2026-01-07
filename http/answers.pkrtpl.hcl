@@ -15,6 +15,7 @@ DNSOPTS="-d 8.8.8.8"
 TIMEZONEOPTS="-z Asia/Ho_Chi_Minh"
 PROXYOPTS="none"
 APKREPOSOPTS="-1"
+USEROPTS="none"
 
 # --- KEY MAGIC: Inject Public Key trực tiếp ---
 # openssh phải được cài đặt thì mới nhận key
