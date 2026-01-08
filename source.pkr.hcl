@@ -12,7 +12,7 @@ source "proxmox-iso" "alpine" {
     iso_url          = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso"
     iso_checksum     = "file:https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso.sha256"
     iso_storage_pool = var.iso_storage
-    # iso_download_pve = true
+    iso_download_pve = true
     unmount          = true
   }
 
