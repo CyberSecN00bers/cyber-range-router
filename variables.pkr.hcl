@@ -32,12 +32,27 @@ variable "ssh_private_key_file" {
 }
 
 # --- Network Config ---
-variable "bridge_wan" {
-  type    = string
-  default = "vmbr0"
+variable "internet_bridge" {
+  description = "WAN bridge for internet connectivity"
+  type        = string
+  default     = "vmbr0"
 }
 
-variable "bridge_lan" {
-  type    = string
-  default = "vmbr1"
+variable "lan_bridge" {
+  description = "LAN bridge (SDN Vnet) for internal lab network"
+  type        = string
+  default     = "vmbr1"
+}
+
+# --- Storage Config ---
+variable "iso_storage" {
+  description = "Storage pool for ISO images and templates"
+  type        = string
+  default     = "local"
+}
+
+variable "vm_storage_pool" {
+  description = "Storage pool for VM disks"
+  type        = string
+  default     = "local-lvm"
 }
