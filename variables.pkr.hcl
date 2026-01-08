@@ -41,7 +41,7 @@ variable "internet_bridge" {
 variable "lan_bridge" {
   description = "LAN bridge (SDN Vnet) for internal lab network"
   type        = string
-  default     = "vmbr0"
+  default     = "vmbr1"
 }
 
 # --- Storage Config ---
