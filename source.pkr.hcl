@@ -11,8 +11,8 @@ source "proxmox-iso" "alpine" {
     type             = "scsi"
     iso_url          = "https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso"
     iso_checksum     = "file:https://dl-cdn.alpinelinux.org/alpine/v3.23/releases/x86_64/alpine-virt-3.23.2-x86_64.iso.sha256"
-    iso_storage_pool = "local"
-    # iso_download_pve = true
+    iso_storage_pool = var.iso_storage
+    iso_download_pve = true
     unmount          = true
   }
 
@@ -29,22 +29,22 @@ source "proxmox-iso" "alpine" {
   tags                 = "alpine;router"
 
   
-  # Network: 2 Cards (WAN/LAN)
+  # Network: WAN (eth0) + LAN Trunk (eth1)
   network_adapters {
-    model  = "virtio"
-    bridge = var.bridge_wan
+    model    = "virtio"
+    bridge   = var.internet_bridge
     firewall = false
   }
   network_adapters {
-    model  = "virtio"
-    bridge = var.bridge_lan
+    model    = "virtio"
+    bridge   = var.lan_bridge
     firewall = false
   }
 
   disks {
     type         = "scsi"
     disk_size    = "4G"
-    storage_pool = "local-lvm"
+    storage_pool = var.vm_storage_pool
     format       = "raw"
   }
 
@@ -74,6 +74,6 @@ source "proxmox-iso" "alpine" {
 
   # Cloud-init
   cloud_init              = true
-  cloud_init_storage_pool = "local-lvm"
+  cloud_init_storage_pool = var.vm_storage_pool
 }
 
