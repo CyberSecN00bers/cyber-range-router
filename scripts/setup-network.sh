@@ -202,6 +202,7 @@ if [ "$WAN_MODE" = "static" ] && [ -z "$WAN_ADDR" ]; then
 fi
 
 say "[+] Write /etc/network/interfaces ..."
+
 mkdir -p /etc/network/interfaces.d
 [ -f /etc/network/interfaces ] && cp /etc/network/interfaces "/etc/network/interfaces.bak.$(date +%s)" 2>/dev/null || true
 
