@@ -20,7 +20,7 @@ DMZ_IF="${LAN_TRUNK}.${DMZ_VID}"
 DMZ_ADDR="172.16.99.1/24"
 
 # ---- DMZ services ----
-GUAC_IP="172.16.99.10"
+TRAEFIK_IP="172.16.99.10"
 WAZUH_IP="172.16.99.11"
 WAZUH_WAN_PORT="9443"   # WAN:9443 -> Wazuh:443
 
@@ -202,6 +202,7 @@ if [ "$WAN_MODE" = "static" ] && [ -z "$WAN_ADDR" ]; then
 fi
 
 say "[+] Write /etc/network/interfaces ..."
+
 mkdir -p /etc/network/interfaces.d
 [ -f /etc/network/interfaces ] && cp /etc/network/interfaces "/etc/network/interfaces.bak.$(date +%s)" 2>/dev/null || true
 
@@ -271,6 +272,7 @@ dhcp-authoritative
 no-resolv
 server=8.8.8.8
 server=1.1.1.1
+interface=${WAN_IF}
 bind-interfaces
 conf-dir=/etc/dnsmasq.d,*.conf
 EOF
@@ -315,8 +317,8 @@ hook_chain_first nat POSTROUTING "$NAT_POST"
 iptables_add_once nat "$NAT_POST" -o "$WAN_IF" -j MASQUERADE
 
 # DNAT from WAN -> DMZ
-iptables_add_once nat "$NAT_PRE" -i "$WAN_IF" -p tcp --dport 80  -j DNAT --to-destination "${GUAC_IP}:80"
-iptables_add_once nat "$NAT_PRE" -i "$WAN_IF" -p tcp --dport 443 -j DNAT --to-destination "${GUAC_IP}:443"
+iptables_add_once nat "$NAT_PRE" -i "$WAN_IF" -p tcp --dport 80  -j DNAT --to-destination "${TRAEFIK_IP}:80"
+iptables_add_once nat "$NAT_PRE" -i "$WAN_IF" -p tcp --dport 443 -j DNAT --to-destination "${TRAEFIK_IP}:443"
 iptables_add_once nat "$NAT_PRE" -i "$WAN_IF" -p tcp --dport "$WAZUH_WAN_PORT" -j DNAT --to-destination "${WAZUH_IP}:443"
 
 # Hairpin DNAT (internal -> WAN_IP:9443 -> Wazuh:443)
@@ -350,7 +352,7 @@ iptables_add_once filter FORWARD -j "$SERVICES_CHAIN"
 iptables_add_once filter FORWARD -j "$VLAN_CHAIN"
 
 # WAN -> DMZ (published services)
-iptables_add_once filter "$SERVICES_CHAIN" -i "$WAN_IF" -o "$DMZ_IF" -p tcp -d "$GUAC_IP" -m multiport --dports 80,443 \
+iptables_add_once filter "$SERVICES_CHAIN" -i "$WAN_IF" -o "$DMZ_IF" -p tcp -d "$TRAEFIK_IP" -m multiport --dports 80,443 \
   -m conntrack --ctstate NEW -j ACCEPT
 
 iptables_add_once filter "$SERVICES_CHAIN" -i "$WAN_IF" -o "$DMZ_IF" -p tcp -d "$WAZUH_IP" --dport 443 \
@@ -365,6 +367,9 @@ iptables_add_once filter "$VLAN_CHAIN" -i "$MGMT_IF" -o "$WAN_IF" \
 
 iptables_add_once filter "$VLAN_CHAIN" -i "$MGMT_IF" -o "$DMZ_IF" -d "$WAZUH_IP" -p tcp -m multiport --dports 1514,1515 \
   -m conntrack --ctstate NEW,ESTABLISHED,RELATED -m comment --comment "mgmt10-wazuh-agent" -j ACCEPT
+
+iptables_add_once filter "$VLAN_CHAIN" -i "$MGMT_IF" -o "$DMZ_IF" -d "$TRAEFIK_IP" -p tcp -m multiport --dports 6333,6334 \
+  -m conntrack --ctstate NEW,ESTABLISHED,RELATED -m comment --comment "mgmt10-traefik-qdrant" -j ACCEPT
 
 if [ -n "$WAN_IP" ]; then
   iptables_add_once filter "$VLAN_CHAIN" -i "$MGMT_IF" -o "$DMZ_IF" -d "$WAZUH_IP" -p tcp --dport 443 \

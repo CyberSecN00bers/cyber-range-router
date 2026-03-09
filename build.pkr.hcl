@@ -10,9 +10,15 @@ build {
     destination = "/usr/local/bin/qm-vlan"
   }
 
+  provisioner "file" {
+    source      = "scripts/add-domain.sh"
+    destination = "/usr/local/bin/add-domain"
+  }
+
   provisioner "shell" {
     inline = [
       "chmod +x /usr/local/bin/qm-vlan",
+      "chmod +x /usr/local/bin/add-domain",
       "echo 'Build Complete via SSH Key!'",
       "apk add curl iptables"
     ]
