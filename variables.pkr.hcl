@@ -35,13 +35,12 @@ variable "ssh_private_key_file" {
 variable "internet_bridge" {
   description = "WAN bridge for internet connectivity"
   type        = string
-  default     = "vmbr0"
+  default     = "vmbr10"
 }
 
 variable "lan_bridge" {
   description = "LAN bridge (SDN Vnet) for internal lab network"
   type        = string
-  default     = "vmbr1"
 }
 
 # --- Storage Config ---

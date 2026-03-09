@@ -8,7 +8,7 @@ ssh_private_key_file  = "/tmp/ssh/pri_key"
 
 # Network
 internet_bridge       = "vmbr10"      # WAN bridge
-lan_bridge            = "vnet-lab"    # LAN bridge (SDN Vnet)
+lan_bridge            = "nonet"    # LAN bridge (SDN Vnet)
 
 # Storage
 iso_storage           = "local"
