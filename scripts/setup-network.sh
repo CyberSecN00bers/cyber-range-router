@@ -32,8 +32,8 @@ SERVICES_CHAIN="QM_SERVICES"
 WAZUH_UI_MARK="0x9443"
 
 # Wildcard DNS suffix served by the router
-DNS_WILDCARD_DOMAIN="cyber-range.local"
-DNS_WILDCARD_CONF="/etc/dnsmasq.d/cyber-range-local.conf"
+DNS_WILDCARD_DOMAIN="cyber-range.lab"
+DNS_WILDCARD_CONF="/etc/dnsmasq.d/cyber-range-lab.conf"
 
 # Optional hardening
 DISABLE_IPV6="${DISABLE_IPV6:-1}"
