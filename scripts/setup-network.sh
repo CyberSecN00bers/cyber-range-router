@@ -31,6 +31,10 @@ SERVICES_CHAIN="QM_SERVICES"
 # Hairpin UI gating: only allow internal -> WAN_IP:9443 (marked) to reach Wazuh:443
 WAZUH_UI_MARK="0x9443"
 
+# Wildcard DNS suffix served by the router
+DNS_WILDCARD_DOMAIN="cyber-range.lab"
+DNS_WILDCARD_CONF="/etc/dnsmasq.d/cyber-range-lab.conf"
+
 # Optional hardening
 DISABLE_IPV6="${DISABLE_IPV6:-1}"
 LOG_FORWARD_DROPS="${LOG_FORWARD_DROPS:-0}"
@@ -115,6 +119,21 @@ svc_restart() {
     rc-service "$svc" stop >/dev/null 2>&1 || true
     rc-service "$svc" start >/dev/null 2>&1 || true
   }
+}
+
+write_wildcard_dns_conf() {
+  wan_ip="$1"
+
+  if [ -z "$wan_ip" ]; then
+    rm -f "$DNS_WILDCARD_CONF" 2>/dev/null || true
+    say "[!] WARN: WAN IP not detected; skip wildcard DNS for ${DNS_WILDCARD_DOMAIN}."
+    return 1
+  fi
+
+  cat > "$DNS_WILDCARD_CONF" <<EOF
+# Auto-generated: *.${DNS_WILDCARD_DOMAIN} -> ${wan_ip}
+address=/${DNS_WILDCARD_DOMAIN}/${wan_ip}
+EOF
 }
 
 # --- IMPORTANT: explicit source lines generation (no wildcard) ---
@@ -291,10 +310,17 @@ dhcp-option=tag:${DMZ_IF},option:router,172.16.99.1
 dhcp-option=tag:${DMZ_IF},option:dns-server,8.8.8.8
 EOF
 
+WAN_IP="$(detect_wan_ip_only)"
+if [ -z "$WAN_IP" ] && [ -n "$WAN_ADDR" ]; then
+  WAN_IP="${WAN_ADDR%%/*}"
+fi
+write_wildcard_dns_conf "$WAN_IP" || true
+
 svc_restart dnsmasq
 
 # ---- Firewall / NAT ----
 WAN_IP="$(detect_wan_ip_only)"
+[ -z "$WAN_IP" ] && [ -n "$WAN_ADDR" ] && WAN_IP="${WAN_ADDR%%/*}"
 [ -n "$WAN_IP" ] && say "[+] WAN IP detected: $WAN_IP" || say "[!] WARN: WAN IP not detected yet (hairpin UI needs WAN IP)."
 
 NAT_PRE="QM_NAT_PREROUTING"
